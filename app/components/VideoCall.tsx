@@ -29,7 +29,7 @@ export default function VideoCall() {
     socket.emit("join-room", "room-1");
 
     socket.on("user-joined", (id) => {
-      polite.current[id] = socket?.id > id;
+      polite.current[id] = (socket?.id||0) > id;
       createPeer(id);
     });
 
