@@ -1,9 +1,10 @@
 "use client";
 
+import envirnment from "@/envirnment";
 import { useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
-const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+const socket = io(envirnment.api_url!, {
   transports: ["websocket"]
 });
 
