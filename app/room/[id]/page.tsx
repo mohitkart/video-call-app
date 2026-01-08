@@ -94,10 +94,6 @@ export default function RoomPage() {
 
     const socket = socketRef.current;
 
-   
-
-   
-
     const handleCreated = async () => {
       hostRef.current = true;
       await getUserMediaStream();
@@ -121,8 +117,7 @@ export default function RoomPage() {
       setUsers(prev => prev.filter(id => id !== data.socketId));
     };
 
-     socket.on('joined',handleJoined);
-
+    socket.on('joined',handleJoined);
     socket.on('created',handleCreated);
     socket.on('ready', initiateCall);
     socket.on('offer', handleOffer);
