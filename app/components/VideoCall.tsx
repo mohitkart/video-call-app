@@ -1,102 +1,124 @@
-/* eslint-disable react-hooks/refs */
 "use client";
 
-import envirnment from "@/envirnment";
-import { useEffect, useRef, useState } from "react";
-import io from "socket.io-client";
+import { useEffect, useRef } from "react";
+import { io } from "socket.io-client";
 
-const socket = io(envirnment.api_url);
+const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+  transports: ["websocket"]
+});
 
 const ICE_SERVERS = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    }
+  ]
 };
 
 export default function VideoCall() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const peersRef = useRef<Record<string, RTCPeerConnection>>({});
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [currentuseId, setCurrentUserId] = useState<string | null>(null);
+  const peers = useRef<Record<string, RTCPeerConnection>>({});
+  const makingOffer = useRef<Record<string, boolean>>({});
+  const polite = useRef<Record<string, boolean>>({});
+  const localStream = useRef<MediaStream | null>(null);
 
-  // Step 1: Get camera & mic
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((stream) => {
-        setLocalStream(stream);
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
-      });
-
     socket.emit("join-room", "room-1");
-  }, []);
 
-  // Step 2: When new user joins
-  socket.on("user-joined", async (userId) => {
-     setCurrentUserId(userId)
-     console.log("userId",userId)
-    const peer = createPeer(userId);
-    peersRef.current[userId] = peer;
-
-    const offer = await peer.createOffer();
-    await peer.setLocalDescription(offer);
-
-    socket.emit("offer", { to: userId, offer });
-  });
-
-  // Step 3: Receive offer
-  socket.on("offer", async ({ offer, from }) => {
-    const peer = createPeer(from);
-    peersRef.current[from] = peer;
-
-    await peer.setRemoteDescription(offer);
-    const answer = await peer.createAnswer();
-    await peer.setLocalDescription(answer);
-
-    socket.emit("answer", { to: from, answer });
-  });
-
-  // Step 4: Receive answer
-  socket.on("answer", async ({ answer, from }) => {
-    await peersRef.current[from]?.setRemoteDescription(answer);
-  });
-
-  // Step 5: ICE candidates
-  socket.on("ice-candidate", ({ candidate, from }) => {
-    peersRef.current[from]?.addIceCandidate(candidate);
-  });
-
-  // Create Peer
-  function createPeer(userId: string) {
-    const peer = new RTCPeerConnection(ICE_SERVERS);
-
-    localStream?.getTracks().forEach((track) => {
-      peer.addTrack(track, localStream);
+    socket.on("user-joined", (id) => {
+      polite.current[id] = socket?.id > id;
+      createPeer(id);
     });
 
-    peer.onicecandidate = (e) => {
-      if (e.candidate) {
-        socket.emit("ice-candidate", {
-          to: userId,
-          candidate: e.candidate
-        });
+    socket.on("offer", async ({ from, offer }) => {
+      let peer = peers.current[from];
+      if (!peer) peer = createPeer(from);
+
+      const offerCollision =
+        makingOffer.current[from] || peer.signalingState !== "stable";
+
+      if (offerCollision) {
+        if (!polite.current[from]) {
+          console.warn("Ignoring offer collision");
+          return;
+        }
+      }
+
+      await peer.setRemoteDescription(offer);
+      const answer = await peer.createAnswer();
+      await peer.setLocalDescription(answer);
+
+      socket.emit("answer", { to: from, answer });
+    });
+
+    socket.on("answer", async ({ from, answer }) => {
+      const peer = peers.current[from];
+      if (!peer) return;
+
+      if (peer.signalingState !== "have-local-offer") return;
+
+      await peer.setRemoteDescription(answer);
+    });
+
+    socket.on("ice-candidate", ({ from, candidate }) => {
+      peers.current[from]?.addIceCandidate(candidate);
+    });
+  }, []);
+
+  function createPeer(id: string) {
+    const peer = new RTCPeerConnection(ICE_SERVERS);
+    peers.current[id] = peer;
+    makingOffer.current[id] = false;
+
+    localStream.current?.getTracks().forEach((track) => {
+      peer.addTrack(track, localStream.current!);
+    });
+
+    peer.onicecandidate = ({ candidate }) => {
+      if (candidate) {
+        socket.emit("ice-candidate", { to: id, candidate });
       }
     };
 
-    peer.ontrack = (e) => {
+    peer.ontrack = ({ streams }) => {
       const video = document.createElement("video");
-      video.srcObject = e.streams[0];
+      video.srcObject = streams[0];
       video.autoplay = true;
+      video.playsInline = true;
       document.body.appendChild(video);
+    };
+
+    peer.onnegotiationneeded = async () => {
+      try {
+        makingOffer.current[id] = true;
+        const offer = await peer.createOffer();
+        await peer.setLocalDescription(offer);
+        socket.emit("offer", { to: id, offer });
+      } finally {
+        makingOffer.current[id] = false;
+      }
     };
 
     return peer;
   }
 
+  async function startCamera() {
+    localStream.current = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true
+    });
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = localStream.current;
+    }
+  }
+
   return (
-    <div>
-      <h2>Next.js Video Call ({currentuseId})</h2>
-      <video ref={localVideoRef} autoPlay muted />
-    </div>
+    <>
+      <button onClick={startCamera}>Start Camera</button>
+      <video ref={localVideoRef} autoPlay muted playsInline />
+    </>
   );
 }
