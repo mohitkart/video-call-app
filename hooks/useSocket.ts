@@ -3,7 +3,7 @@
 
 import envirnment from '@/envirnment';
 import { useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
+import io from 'socket.io-client';
 
 export const useSocket = (roomName: string) => {
   const socketRef = useRef<any>(undefined)
