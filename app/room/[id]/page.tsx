@@ -1,178 +1,401 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/preserve-manual-memoization */
 'use client';
 import { useParams } from 'next/navigation';
-import { useRef, useEffect, useCallback, useState } from 'react';
-import { useSocket } from '../../../hooks/useSocket';
+import { useEffect, useState } from "react";
+import { cloneDeep } from "lodash";
+
+import { useSocket } from "@/store/socket";
+import usePeer from "@/hooks/use-peer";
+import useMediaStream from "@/hooks/use-media-stream";
+import usePlayer from "@/hooks/use-player";
+import useChat from "@/hooks/use-chat";
+
+
+import CopySection from "@/components/copy-section";
+
+// Modern UI Components
+import SimpleCallLayout from "@/components/ui/simple-call-layout";
+import FloatingControls from "@/components/ui/floating-controls";
+import SimpleVideoGrid from "@/components/ui/simple-video-grid";
+import SimpleChat from "@/components/ui/simple-chat";
+import PermissionRequest from "@/components/ui/permission-request";
+
 
 export default function RoomPage() {
   const params = useParams();
   const roomId = params.id as string;
-  const socketRef = useSocket(roomId!);
 
-    // ✅ Add state for real-time notifications
-  const [messages, setMessages] = useState<string[]>([]);
-  const [users, setUsers] = useState<string[]>([]);
-  
-  const userVideoRef = useRef<HTMLVideoElement>(null);
-  const peerVideoRef = useRef<HTMLVideoElement>(null);
-  const rtcConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const userStreamRef = useRef<MediaStream | null>(null);
-  const hostRef = useRef<boolean>(false);
+  const socket: any = useSocket();
+  const { peer, myId } = usePeer();
+  const {
+    stream,
+    isAudioEnabled,
+    isVideoEnabled,
+    toggleAudio: toggleStreamAudio,
+    toggleVideo: toggleStreamVideo,
+    error: mediaError,
+    permissions,
+    audioDevices,
+    selectedAudioInput,
+    selectedAudioOutput,
+    switchAudioInput,
+    switchAudioOutput,
+  } = useMediaStream();
+  const {
+    players,
+    setPlayers,
+    playerHighlighted,
+    nonHighlightedPlayers,
+    toggleAudio,
+    toggleVideo,
+    leaveRoom,
+  } = usePlayer(myId, roomId, peer, {
+    toggleAudio: toggleStreamAudio,
+    toggleVideo: toggleStreamVideo,
+    isAudioEnabled,
+    isVideoEnabled,
+  });
 
-  const createPeerConnection = useCallback((): RTCPeerConnection => {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:openrelay.metered.ca:80' }]
-    });
+  const [users, setUsers] = useState<any[]>([]);
+  const [callStartTime] = useState(Date.now());
+  const [callDuration, setCallDuration] = useState(0);
+  const [showTroubleshooter, setShowTroubleshooter] = useState(false);
 
-    pc.onicecandidate = (event) => {
-      if (event.candidate && socketRef.current) {
-        socketRef.current.emit('icecandidate', event.candidate, roomId);
-      }
-    };
+  // Initialize chat functionality
+  const {
+    messages,
+    connectedPeers,
+    isConnected: isChatConnected,
+    sendMessage,
+    cleanupPeerDataChannel,
+  }: any = useChat(peer, myId, users);
 
-    pc.ontrack = (event) => {
-      if (peerVideoRef.current && event.streams[0]) {
-        peerVideoRef.current.srcObject = event.streams[0];
-      }
-    };
-
-    return pc;
-  }, [roomId]);
-
-  const getUserMediaStream = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 500, height: 500 },
-      audio: true
-    });
-    userStreamRef.current = stream;
-    if (userVideoRef.current) {
-      userVideoRef.current.srcObject = stream;
-      userVideoRef.current.play();
-    }
-  }, []);
-
-  const initiateCall = useCallback(async () => {
-    setMessages(prev => [...prev, 'Other user ready - starting call...']);
-    if (!userStreamRef.current) return;
-
-    rtcConnectionRef.current = createPeerConnection();
-    
-    userStreamRef.current.getTracks().forEach((track) => {
-      rtcConnectionRef.current?.addTrack(track, userStreamRef.current!);
-    });
-
-    const offer = await rtcConnectionRef.current.createOffer();
-    await rtcConnectionRef.current.setLocalDescription(offer);
-    socketRef.current?.emit('offer', offer, roomId);
-  }, [createPeerConnection, roomId]);
-
-  const handleOffer = useCallback(async (offer: RTCSessionDescriptionInit) => {
-    if (hostRef.current) return;
-
-    rtcConnectionRef.current = createPeerConnection();
-    await rtcConnectionRef.current.setRemoteDescription(offer);
-
-    userStreamRef.current?.getTracks().forEach((track) => {
-      rtcConnectionRef.current?.addTrack(track, userStreamRef.current!);
-    });
-
-    const answer = await rtcConnectionRef.current.createAnswer();
-    await rtcConnectionRef.current.setLocalDescription(answer);
-    socketRef.current?.emit('answer', answer, roomId);
-  }, [createPeerConnection, roomId]);
-
-  const handleAnswer = useCallback(async (answer: RTCSessionDescriptionInit) => {
-    await rtcConnectionRef.current?.setRemoteDescription(answer);
-  }, []);
-
-  const handleIceCandidate = useCallback((candidate: RTCIceCandidateInit) => {
-    rtcConnectionRef.current?.addIceCandidate(candidate);
-  }, []);
-
+  // Call duration timer
   useEffect(() => {
-    if (!socketRef.current) return;
+    const timer = setInterval(() => {
+      setCallDuration(Math.floor((Date.now() - callStartTime) / 1000));
+    }, 1000);
 
-    const socket = socketRef.current;
+    return () => clearInterval(timer);
+  }, [callStartTime]);
 
-    const handleCreated = async () => {
-      hostRef.current = true;
-      await getUserMediaStream();
-      setMessages(prev => [...prev, 'You created the room']);
-    };
-
-    const handleJoined = async () => {
-      await getUserMediaStream();
-      setMessages(prev => [...prev, 'You joined the room']);
-    };
-
-
-     // ✅ NEW: Real-time join/leave handlers
-    const handleUserJoined = (data: { socketId: string; message: string }) => {
-      setMessages(prev => [...prev, data.message]);
-      setUsers(prev => [...prev, data.socketId]);
-    };
-
-    const handleUserLeft = (data: { socketId: string; message: string }) => {
-      setMessages(prev => [...prev, data.message]);
-      setUsers(prev => prev.filter(id => id !== data.socketId));
-    };
-
-    socket.on('joined',handleJoined);
-    socket.on('created',handleCreated);
-    socket.on('ready', initiateCall);
-    socket.on('offer', handleOffer);
-    socket.on('answer', handleAnswer);
-    socket.on('icecandidate', handleIceCandidate);
-    socket.on('user-joined', handleUserJoined);  // ✅ NEW
-    socket.on('user-left', handleUserLeft);     // ✅ NEW
-
-    return () => {
-      socket.off('created');
-      socket.off('joined');
-      socket.off('ready');
-      socket.off('offer');
-      socket.off('answer');
-      socket.off('icecandidate');
-      socket.off('user-joined');
-      socket.off('user-left');
-    };
-  }, [getUserMediaStream, initiateCall, handleOffer, handleAnswer, handleIceCandidate]);
-
-  const leaveRoom = () => {
-    socketRef.current?.emit('leave', roomId);
-    if (userStreamRef.current) {
-      userStreamRef.current.getTracks().forEach(track => track.stop());
+  // Add yourself to players when stream is ready
+  useEffect(() => {
+    if (myId && stream) {
+      setPlayers((prev: any) => ({
+        ...prev,
+        [myId]: {
+          url: stream,
+          muted: true, // Always mute own audio to prevent feedback
+          playing: isVideoEnabled,
+          audioEnabled: isAudioEnabled, // Track actual audio state
+        },
+      }));
     }
-    if (rtcConnectionRef.current) {
-      rtcConnectionRef.current.close();
+  }, [myId, stream, isAudioEnabled, isVideoEnabled, setPlayers]);
+
+  // Enhanced retry media stream with audio diagnostics
+  const retryMediaStream = async () => {
+    if (process.env.NODE_ENV === "development") {
+      const { quickAudioCheck } = await import("@/utils/audio-diagnostics");
+      console.log("🔍 Running audio diagnostics before retry...");
+      await quickAudioCheck();
     }
-    window.location.href = '/';
+    window.location.reload();
   };
 
+  useEffect(() => {
+    if (!socket || !peer || !stream) return;
+
+    const handleUserConnected = (newUser: any) => {
+      console.log(`user connected in room with userId ${newUser}`);
+      const call = peer?.call(newUser, stream);
+
+      call.on("stream", (incomingStream: any) => {
+        console.log(`incoming stream from ${newUser}`);
+        setPlayers((prev: any) => ({
+          ...prev,
+          [newUser]: {
+            url: incomingStream,
+            muted: false, // Allow remote audio to be heard
+            playing: true,
+            audioEnabled: true, // Track actual audio state
+          },
+        }));
+
+        setUsers((prev: any) => ({
+          ...prev,
+          [newUser]: call,
+        }));
+      });
+
+      // Handle call close event for outgoing calls
+      call.on("close", () => {
+        console.log(`Outgoing call closed with ${newUser}`);
+        setPlayers((prev: any) => {
+          const copy: any = cloneDeep(prev);
+          delete copy[newUser];
+          return copy;
+        });
+
+        setUsers((prev) => {
+          const copy = cloneDeep(prev);
+          delete copy[newUser];
+          return copy;
+        });
+      });
+
+      // Handle call error event for outgoing calls
+      call.on("error", (error: any) => {
+        console.error(`Outgoing call error with ${newUser}:`, error);
+        setPlayers((prev: any) => {
+          const copy: any = cloneDeep(prev);
+          delete copy[newUser];
+          return copy;
+        });
+
+        setUsers((prev) => {
+          const copy = cloneDeep(prev);
+          delete copy[newUser];
+          return copy;
+        });
+      });
+    };
+
+    socket.on("user-connected", handleUserConnected);
+
+    return () => {
+      socket.off("user-connected", handleUserConnected);
+    };
+  }, [peer, setPlayers, socket, stream]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleToggleAudio = (userId: any) => {
+      console.log(`user with id ${userId} toggled audio`);
+      setPlayers((prev: any) => {
+        const copy: any = cloneDeep(prev);
+        if (copy[userId]) {
+          // Toggle the audioEnabled state for display purposes
+          copy[userId].audioEnabled = !copy[userId].audioEnabled;
+          // Set muted based on audioEnabled state - if audio is disabled, mute it
+          copy[userId].muted = !copy[userId].audioEnabled;
+        }
+        return { ...copy };
+      });
+    };
+
+    const handleToggleVideo = (userId: any) => {
+      console.log(`user with id ${userId} toggled video`);
+      setPlayers((prev: any) => {
+        const copy: any = cloneDeep(prev);
+        copy[userId].playing = !copy[userId].playing;
+        return { ...copy };
+      });
+    };
+
+    const handleUserLeave = (userId: any) => {
+      console.log(`user ${userId} is leaving the room`);
+
+      // Clean up chat data channel for leaving user
+      cleanupPeerDataChannel(userId);
+
+      // Clean up peer connection
+      if (users[userId]) {
+        users[userId].close();
+      }
+
+      // Remove from players state
+      setPlayers((prev: any) => {
+        const copy: any = cloneDeep(prev);
+        delete copy[userId];
+        return copy;
+      });
+
+      // Remove from users state
+      setUsers((prev) => {
+        const copy = cloneDeep(prev);
+        delete copy[userId];
+        return copy;
+      });
+    };
+
+    socket.on("user-toggle-audio", handleToggleAudio);
+    socket.on("user-toggle-video", handleToggleVideo);
+    socket.on("user-leave", handleUserLeave);
+
+    return () => {
+      socket.off("user-toggle-audio", handleToggleAudio);
+      socket.off("user-toggle-video", handleToggleVideo);
+      socket.off("user-leave", handleUserLeave);
+    };
+  }, [players, setPlayers, socket, users, cleanupPeerDataChannel]);
+
+  useEffect(() => {
+  
+    if (!peer || !stream) return;
+
+    peer.on("call", (call: any) => {
+      const { peer: callerId } = call;
+      call.answer(stream);
+
+      call.on("stream", (incomingStream: any) => {
+        console.log(`incoming stream from ${callerId}`);
+        setPlayers((prev: any) => ({
+          ...prev,
+          [callerId]: {
+            url: incomingStream,
+            muted: false, // Allow remote audio to be heard
+            playing: true,
+            audioEnabled: true, // Track actual audio state
+          },
+        }));
+
+        setUsers((prev) => ({
+          ...prev,
+          [callerId]: call,
+        }));
+      });
+
+      // Handle call close event
+      call.on("close", () => {
+        console.log(`Call closed with ${callerId}`);
+        // Remove from players and users when call is closed
+        setPlayers((prev: any) => {
+          const copy: any = cloneDeep(prev);
+          delete copy[callerId];
+          return copy;
+        });
+
+        setUsers((prev) => {
+          const copy = cloneDeep(prev);
+          delete copy[callerId];
+          return copy;
+        });
+      });
+
+      // Handle call error event
+      call.on("error", (error: any) => {
+        console.error(`Call error with ${callerId}:`, error);
+        // Remove from players and users on error
+        setPlayers((prev: any) => {
+          const copy: any = cloneDeep(prev);
+          delete copy[callerId];
+          return copy;
+        });
+
+        setUsers((prev) => {
+          const copy = cloneDeep(prev);
+          delete copy[callerId];
+          return copy;
+        });
+      });
+    });
+  }, [peer, setPlayers, stream]);
+
+  useEffect(() => {
+    if (!stream || !myId) return;
+
+    console.log(`setting my stream ${myId}`);
+    setPlayers((prev: any) => ({
+      ...prev,
+      [myId]: {
+        url: stream,
+        muted: true, // Always mute own audio to prevent feedback
+        playing: isVideoEnabled, // Use actual video state
+      },
+    }));
+  }, [myId, setPlayers, stream, isVideoEnabled]); // Removed isAudioEnabled dependency
+
+  // Apply audio output device to all players when it changes
+  useEffect(() => {
+    if (selectedAudioOutput && selectedAudioOutput !== 'default') {
+      // Apply to all video elements in the page
+      const videoElements = document.querySelectorAll('video');
+      videoElements.forEach(video => {
+        if (video.setSinkId) {
+          video.setSinkId(selectedAudioOutput).catch(err => {
+            console.warn('Failed to set audio output device:', err);
+          });
+        }
+      });
+    }
+  }, [selectedAudioOutput]);
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
-       {/* ✅ Real-time notifications */}
-      <div className="w-full max-w-2xl mb-6 p-4 bg-gray-800 rounded-lg">
-        <h3 className="text-lg font-bold mb-2">Room Status</h3>
-        {messages.slice(-5).map((msg, i) => (
-          <div key={i} className="text-sm mb-1">{msg}</div>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <video ref={userVideoRef} autoPlay muted className="w-96 h-64 bg-black rounded-lg" />
-        <video ref={peerVideoRef} autoPlay className="w-96 h-64 bg-black rounded-lg" />
-      </div>
+    <>
+      {/* Permission Request Overlay */}
+      {(mediaError || !permissions.audio || !permissions.video) && (
+        <PermissionRequest
+          error={mediaError}
+          permissions={permissions}
+          onRetry={retryMediaStream}
+        />
+      )}
 
-        <div className="text-sm text-gray-400 mb-4">
-        Users in room: {users.length}
-      </div>
-
-      <button
-        onClick={leaveRoom}
-        className="px-6 py-2 bg-red-600 rounded-lg hover:bg-red-700"
+      <SimpleCallLayout
+        roomId={roomId}
+        participants={Object.keys(players)}
+        onShare={() => {
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(window.location.href);
+          }
+        }}
       >
-        Leave Room
-      </button>
-    </div>
+        {/* Main Video Area */}
+        <div className="h-full flex flex-col">
+          {/* Video Grid */}
+          <div className="flex-1 p-4 pb-24 overflow-hidden">
+            <SimpleVideoGrid
+              players={players}
+              highlightedPlayerId={
+                playerHighlighted
+                  ? Object.keys(players).find(
+                    (id) => players[id] === playerHighlighted
+                  )
+                  : null
+              }
+              onPlayerClick={(playerId: any) => {
+                console.log(`Player ${playerId} clicked`);
+              }}
+              myId={myId}
+              isAudioEnabled={isAudioEnabled} // Pass actual audio state
+              selectedAudioOutput={selectedAudioOutput} // Pass selected audio output
+              className="h-full"
+            />
+          </div>
+
+          {/* Room ID Copy Section - Hidden */}
+          <div className="hidden">
+            <CopySection roomId={roomId} />
+          </div>
+        </div>
+
+        {/* Floating Controls */}
+        {myId && socket && (
+          <FloatingControls
+            muted={!isAudioEnabled} // When audio is OFF, show as muted
+            playing={isVideoEnabled}
+            toggleAudio={toggleAudio}
+            toggleVideo={toggleVideo}
+            leaveRoom={leaveRoom}
+            onTroubleshoot={() => setShowTroubleshooter(true)}
+          />
+        )}
+
+        {/* Simple Chat Component */}
+        {myId && (
+          <SimpleChat
+            messages={messages}
+            onSendMessage={sendMessage}
+            isConnected={isChatConnected}
+            connectedPeers={connectedPeers}
+            myId={myId}
+          />
+        )}
+      </SimpleCallLayout>
+    </>
   );
 }
