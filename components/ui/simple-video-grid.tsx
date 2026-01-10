@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/static-components */
-import ReactPlayer from "react-player";
 import { Mic, MicOff, UserSquare2 } from "lucide-react";
-import { memo, useRef } from "react";
+import { memo } from "react";
 import CustomVideoPlayer from "../CustomVideoPlayer";
+import { UserIcon } from "./Icons";
 
 const SimpleVideoGrid = ({
   players,
@@ -22,7 +22,6 @@ const SimpleVideoGrid = ({
   isAudioEnabled: boolean;
   selectedAudioOutput?: string;
 }) => {
-    const playerRef = useRef<any | null>(null);
   const playerEntries:any = Object.entries(players || {});
   const highlightedPlayer = highlightedPlayerId
     ? players[highlightedPlayerId]
@@ -32,15 +31,21 @@ const SimpleVideoGrid = ({
   );
 
   const getGridCols = (count:number) => {
-    if (count === 1) return "grid-cols-1";
-    if (count === 2) return "grid-cols-2";
-    if (count === 3) return "grid-cols-3";
-    if (count <= 4) return "grid-cols-2";
-    return "grid-cols-3";
+    if (count === 1) return "md:grid-cols-1";
+    if (count === 2) return "md:grid-cols-2";
+    if (count === 3) return "md:grid-cols-3";
+    if (count <= 4) return "md:grid-cols-2";
+    return "md:grid-cols-3";
   };
 
   // Calculate optimal video sizes based on participant count
   const getVideoSize = (count:number, isHighlighted = false) => {
+
+    return {
+       minHeight: "425px",
+        maxHeight: "calc(100dvh-80px)",
+    }
+
     if (isHighlighted) {
       return {
         minHeight: "400px",
@@ -92,20 +97,20 @@ const SimpleVideoGrid = ({
 
       return (
         <div
-          className={`relative cursor-pointer transition-all duration-300 ease-in-out ${
+          className={`relative cursor-pointer ${
             isHighlighted ? "col-span-full" : ""
           }`}
           onClick={() => onPlayerClick?.(playerId)}
         >
           {/* Video Container */}
           <div
-            className={`relative overflow-hidden transition-all duration-300 ease-in-out backdrop-blur-sm ${
+            className={`relative overflow-hidden backdrop-blur-sm ${
               isHighlighted
                 ? "rounded-2xl border-2 border-gradient-to-r from-red-400 via-purple-400 to-blue-400 shadow-2xl bg-white/10"
                 : "rounded-2xl border border-white/20 bg-white/5 hover:border-white/30 hover:bg-white/10"
             } ${
               !player.playing
-                ? "bg-gradient-to-br from-slate-800 to-purple-900"
+                ? "bg-gradient-to-br from-slate-500 to-blue-900"
                 : "bg-black"
             }`}
             style={{
@@ -122,24 +127,12 @@ const SimpleVideoGrid = ({
                 playing={player.playing}
                 className="object-cover"
                 selectedAudioOutput={selectedAudioOutput}
-                //  onReady={() => {
-                //   if (selectedAudioOutput && selectedAudioOutput !== "default") {
-                //     const videoElement =
-                //       playerRef.current?.getInternalPlayer() as HTMLVideoElement | null;
-
-                //     if (videoElement?.setSinkId) {
-                //       videoElement
-                //         .setSinkId(selectedAudioOutput)
-                //         .catch((err) =>
-                //           console.warn("Failed to set audio output device:", err)
-                //         );
-                //     }
-                //   }
-                // }}
+                minHeight={videoSize.minHeight}
+                maxHeight={videoSize.maxHeight}
               />
             ) : (
               <div
-                className="relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slate-800 to-purple-900 backdrop-blur-sm"
+                className="relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-slat-300 to-blue-500 backdrop-blur-sm"
                 style={{
                   minHeight: videoSize.minHeight,
                   maxHeight: videoSize.maxHeight,
@@ -147,12 +140,15 @@ const SimpleVideoGrid = ({
                   height: "100%",
                 }}
               >
-                <UserSquare2
-                  size={20}
-                  width="180%"
-                  height="100%"
-                  className="object-cover text-purple-300 px-32 py-16"
-                />
+                  <div
+                    className="text-white"
+                  >
+                    <UserIcon
+                      size={130}
+                      className=""
+                    />
+                  </div>
+
               </div>
             )}
 
@@ -184,7 +180,7 @@ const SimpleVideoGrid = ({
                 </div>
 
                 {/* User Label */}
-                <div className="px-2 py-1 bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl text-white text-xs font-medium shadow-lg">
+                <div className={`px-2 py-1 ${isMe?'bg-blue-500':'bg-white/10'} backdrop-blur-lg border border-white/20 rounded-xl text-white text-xs font-medium shadow-lg`}>
                   {isMe ? "You" : `User ${playerId.slice(0, 6)}`}
                 </div>
               </div>
@@ -233,9 +229,9 @@ const SimpleVideoGrid = ({
       {otherPlayers.length > 0 && (
         <div className="flex justify-center items-center w-full">
           <div
-            className={`grid gap-4 ${getGridCols(
+            className={`grid gap-4 grid-cols-full ${getGridCols(
               otherPlayers.length
-            )} w-full max-w-6xl justify-items-center`}
+            )} w-full max-w-6xl items-center`}
           >
             {otherPlayers.map(([playerId, player]:any[]) => (
               <PlayerCard

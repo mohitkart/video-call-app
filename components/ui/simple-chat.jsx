@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, MessageCircle, X, Users } from "lucide-react";
+import { ChatIcon } from "./Icons";
 
 const SimpleChat = ({
   messages = [],
   onSendMessage,
   isConnected = false,
   connectedPeers = [],
-  myId,
   className = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,13 +68,13 @@ const SimpleChat = ({
           title={isConnected ? "Open Chat" : "Chat Disconnected"}
         >
           <div
-            className={`p-3 rounded-2xl backdrop-blur-lg border transition-all duration-200 shadow-lg ${
+            className={`p-3 rounded-2xl backdrop-blur-lg border shadow-lg ${
               isConnected
                 ? "bg-white/10 border-white/20 hover:bg-white/20 text-white transform hover:scale-105"
                 : "bg-white/5 border-white/10 hover:bg-white/10 text-gray-300"
             }`}
           >
-            <MessageCircle size={20} />
+            <ChatIcon size={20} />
 
             {/* Message Count Badge */}
             {messages.length > 0 && (

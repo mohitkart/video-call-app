@@ -345,10 +345,9 @@ export default function RoomPage() {
         }}
       >
         {/* Main Video Area */}
-        <div className="h-full flex flex-col">
+        <div className="">
           {/* Video Grid */}
-          <div className="flex-1 p-4 pb-24 overflow-hidden">
-            <SimpleVideoGrid
+           <SimpleVideoGrid
               players={players}
               highlightedPlayerId={
                 playerHighlighted
@@ -365,7 +364,6 @@ export default function RoomPage() {
               selectedAudioOutput={selectedAudioOutput} // Pass selected audio output
               className="h-full"
             />
-          </div>
 
           {/* Room ID Copy Section - Hidden */}
           <div className="hidden">

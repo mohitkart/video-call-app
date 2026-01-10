@@ -8,6 +8,8 @@ export interface CustomVideoPlayerProps {
   className?: string;
   height?: string;
   width?: string;
+  minHeight?: string|number;
+  maxHeight?: string|number;
   selectedAudioOutput?: string;
 }
 
@@ -18,6 +20,8 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   className = "",
   height='100%',
   width='100%',
+   minHeight='100%',
+   maxHeight='100%',
   selectedAudioOutput = "default",
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -74,7 +78,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       autoPlay
       playsInline
       className={className}
-      style={{ width: width, height:height, objectFit: "cover" }}
+      style={{ width: width, height: height, minHeight: minHeight, maxHeight: maxHeight, objectFit: "cover" }}
     />
   );
 };

@@ -1,4 +1,4 @@
-import { Copy } from "lucide-react";
+import { CopyIcon } from "./ui/Icons";
 
 const CopySection = (props) => {
   const { roomId } = props;
@@ -9,7 +9,7 @@ const CopySection = (props) => {
         Copy Room ID:{" "}
         <span className="text-xl text-gray-300 flex items-center">
           {roomId}
-            <Copy
+            <CopyIcon
               className="ml-12 cursor-pointer text-green-500 hover:text-green-400 transition-colors duration-200 ease-in-out"
               size={22}
               onClick={() => {navigator.clipboard.writeText(roomId)}}

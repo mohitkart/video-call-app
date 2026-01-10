@@ -2,10 +2,10 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { v4 as uuidv4 } from "uuid";
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSocket } from "@/store/socket";
+import { getRandomCode } from '@/utils/shared';
 export default function VideoCall() {
   const [roomId, setRoomId] = useState('');
   const router = useRouter();
@@ -42,7 +42,7 @@ export default function VideoCall() {
    }, [socket]);
  
    const createAndJoin = () => {
-     const roomId = uuidv4();
+     const roomId = getRandomCode(8);
      router.push(`/room/${roomId}`);
    };
  

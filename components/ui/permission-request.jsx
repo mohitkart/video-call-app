@@ -53,12 +53,6 @@ const PermissionRequest = ({ error, permissions, onRetry, className = "" }) => {
     <div
       className={`fixed inset-0 bg-gradient-to-br from-slate-900/95 via-purple-900/95 to-slate-900/95 backdrop-blur-sm flex items-center justify-center z-50 ${className}`}
     >
-      {/* Animated background elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-red-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-blob animation-delay-4000"></div>
-      </div>
 
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 max-w-md mx-4 text-center shadow-2xl relative z-10">
         {/* Icon */}
@@ -120,7 +114,7 @@ const PermissionRequest = ({ error, permissions, onRetry, className = "" }) => {
           <button
             onClick={handleRetry}
             disabled={isRetrying}
-            className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border border-blue-400/30 rounded-2xl hover:from-blue-500/30 hover:to-purple-500/30 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-sm shadow-lg transform hover:scale-105"
+            className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border border-blue-400/30 rounded-2xl hover:from-blue-500/30 hover:to-purple-500/30 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm shadow-lg transform hover:scale-105"
           >
             <RefreshCw size={18} className={isRetrying ? "animate-spin" : ""} />
             <span>{isRetrying ? "Requesting..." : "Try Again"}</span>
@@ -134,7 +128,7 @@ const PermissionRequest = ({ error, permissions, onRetry, className = "" }) => {
                   "Please click the camera/microphone icon in your browser's address bar to manage permissions."
                 );
               }}
-              className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-white/10 text-gray-200 border border-white/20 rounded-2xl hover:bg-white/20 hover:border-white/30 transition-all duration-200 backdrop-blur-sm shadow-lg"
+              className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-white/10 text-gray-200 border border-white/20 rounded-2xl hover:bg-white/20 hover:border-white/30 backdrop-blur-sm shadow-lg"
             >
               <Settings size={18} />
               <span>Browser Settings</span>
