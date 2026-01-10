@@ -11,9 +11,6 @@ import useMediaStream from "@/hooks/use-media-stream";
 import usePlayer from "@/hooks/use-player";
 import useChat from "@/hooks/use-chat";
 
-
-import CopySection from "@/components/copy-section";
-
 // Modern UI Components
 import SimpleCallLayout from "@/components/ui/simple-call-layout";
 import FloatingControls from "@/components/ui/floating-controls";
@@ -234,7 +231,7 @@ export default function RoomPage() {
   }, [players, setPlayers, socket, users, cleanupPeerDataChannel]);
 
   useEffect(() => {
-  
+
     if (!peer || !stream) return;
 
     peer.on("call", (call: any) => {
@@ -344,37 +341,29 @@ export default function RoomPage() {
           }
         }}
       >
-        {/* Main Video Area */}
-        <div className="">
-          {/* Video Grid */}
-           <SimpleVideoGrid
-              players={players}
-              highlightedPlayerId={
-                playerHighlighted
-                  ? Object.keys(players).find(
-                    (id) => players[id] === playerHighlighted
-                  )
-                  : null
-              }
-              onPlayerClick={(playerId: any) => {
-                console.log(`Player ${playerId} clicked`);
-              }}
-              myId={myId}
-              isAudioEnabled={isAudioEnabled} // Pass actual audio state
-              selectedAudioOutput={selectedAudioOutput} // Pass selected audio output
-              className="h-full"
-            />
-
-          {/* Room ID Copy Section - Hidden */}
-          <div className="hidden">
-            <CopySection roomId={roomId} />
-          </div>
-        </div>
+        {/* Video Grid */}
+        <SimpleVideoGrid
+          players={players}
+          highlightedPlayerId={
+            playerHighlighted
+              ? Object.keys(players).find(
+                (id) => players[id] === playerHighlighted
+              )
+              : null
+          }
+          onPlayerClick={(playerId: any) => {
+            console.log(`Player ${playerId} clicked`);
+          }}
+          myId={myId}
+          isAudioEnabled={isAudioEnabled} // Pass actual audio state
+          selectedAudioOutput={selectedAudioOutput} // Pass selected audio output
+          className="h-full"
+        />
 
         {/* Floating Controls */}
         {myId && socket && (
           <FloatingControls
-            muted={!isAudioEnabled} // When audio is OFF, show as muted
+            muted={!isAudioEnabled}
             playing={isVideoEnabled}
             toggleAudio={toggleAudio}
             toggleVideo={toggleVideo}
@@ -390,7 +379,6 @@ export default function RoomPage() {
             onSendMessage={sendMessage}
             isConnected={isChatConnected}
             connectedPeers={connectedPeers}
-            myId={myId}
           />
         )}
       </SimpleCallLayout>

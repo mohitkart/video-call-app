@@ -54,7 +54,7 @@ export default function VideoCall() {
    };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-500 via-blue-500 to-slate-500 text-white">
       <h1 className="text-4xl font-bold mb-8">Video Call</h1>
 
         {/* Hero section */}
@@ -80,7 +80,7 @@ export default function VideoCall() {
       <div className="space-y-4 w-96">
         <button
           onClick={createAndJoin}
-          className="w-full px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 text-lg"
+          className="w-full px-6 py-3 bg-white text-blue-500 rounded-lg text-lg hover:bg-gray-100"
         >
           Create Room
         </button>
@@ -89,9 +89,9 @@ export default function VideoCall() {
             value={roomId}
             onChange={(e) => setRoomId(e.target.value)}
             placeholder="Enter Room ID"
-            className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white"
+            className="flex-1 px-4 py-3 bg-gray-100 border border-gray-700 rounded-lg text-black"
           />
-          <button onClick={joinRoom} className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-700">
+          <button onClick={joinRoom} className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-green-700">
             Join
           </button>
         </div>

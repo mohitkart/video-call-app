@@ -43,7 +43,7 @@ const SimpleVideoGrid = ({
 
     return {
        minHeight: "425px",
-        maxHeight: "calc(100dvh-80px)",
+        maxHeight: "calc(100dvh - 90px)",
     }
 
     if (isHighlighted) {
@@ -227,11 +227,11 @@ const SimpleVideoGrid = ({
 
       {/* Participant Grid */}
       {otherPlayers.length > 0 && (
-        <div className="flex justify-center items-center w-full">
+        <div className="flex justify-center items-center w-full p-2">
           <div
             className={`grid gap-4 grid-cols-full ${getGridCols(
               otherPlayers.length
-            )} w-full max-w-6xl items-center`}
+            )} w-full items-center`}
           >
             {otherPlayers.map(([playerId, player]:any[]) => (
               <PlayerCard
