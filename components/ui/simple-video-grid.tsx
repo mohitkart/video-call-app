@@ -15,7 +15,7 @@ const SimpleVideoGrid = ({
   selectedAudioOutput,
 }:{
   players: any | null;
-  highlightedPlayerId?: string;
+  highlightedPlayerId?: any;
   onPlayerClick?: (playerId: string) => void;
   myId: string;
   className?: string;
