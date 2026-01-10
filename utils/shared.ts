@@ -8,7 +8,7 @@ export const copyClipboard=(text:any='')=>{
 }
 
 export function getRandomCode(length = 5) {
-  const letters = '0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+  const letters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
   let code = '';
   for (let i = 0; i < length; i++) {
     code += letters[Math.floor(Math.random() * letters.length)];
