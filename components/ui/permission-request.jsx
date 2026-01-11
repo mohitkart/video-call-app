@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Camera, Mic, RefreshCw, AlertTriangle, Settings } from "lucide-react";
+import { AlertIcon, CameraIcon, MicIcon, RefreshIcon, SettingsIcon } from "./Icons";
 
 const PermissionRequest = ({ error, permissions, onRetry, className = "" }) => {
   const [isRetrying, setIsRetrying] = useState(false);
@@ -59,13 +59,13 @@ const PermissionRequest = ({ error, permissions, onRetry, className = "" }) => {
         <div className="w-20 h-20 bg-gradient-to-r from-red-500/30 to-pink-500/30 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-red-400/20 shadow-lg">
           {errorInfo?.type === "permission" ? (
             <div className="flex space-x-2">
-              <Camera size={24} className="text-red-300" />
-              <Mic size={24} className="text-red-300" />
+              <CameraIcon size={24} className="text-red-300" />
+              <MicIcon size={24} className="text-red-300" />
             </div>
           ) : errorInfo?.type === "device" ? (
-            <AlertTriangle size={32} className="text-yellow-300" />
+            <AlertIcon size={32} className="text-yellow-300" />
           ) : (
-            <AlertTriangle size={32} className="text-red-300" />
+            <AlertIcon size={32} className="text-red-300" />
           )}
         </div>
 
@@ -89,7 +89,7 @@ const PermissionRequest = ({ error, permissions, onRetry, className = "" }) => {
                 : "bg-red-500/20 border-red-400/30 text-red-300"
             }`}
           >
-            <Mic size={16} />
+            <MicIcon size={16} />
             <span className="text-xs font-medium">
               {permissions.audio ? "Allowed" : "Denied"}
             </span>
@@ -102,7 +102,7 @@ const PermissionRequest = ({ error, permissions, onRetry, className = "" }) => {
                 : "bg-red-500/20 border-red-400/30 text-red-300"
             }`}
           >
-            <Camera size={16} />
+            <CameraIcon size={16} />
             <span className="text-xs font-medium">
               {permissions.video ? "Allowed" : "Denied"}
             </span>
@@ -116,7 +116,7 @@ const PermissionRequest = ({ error, permissions, onRetry, className = "" }) => {
             disabled={isRetrying}
             className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-300 border border-blue-400/30 rounded-2xl hover:from-blue-500/30 hover:to-purple-500/30 hover:border-blue-400/50 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm shadow-lg transform hover:scale-105"
           >
-            <RefreshCw size={18} className={isRetrying ? "animate-spin" : ""} />
+            <RefreshIcon size={18} className={isRetrying ? "animate-spin" : ""} />
             <span>{isRetrying ? "Requesting..." : "Try Again"}</span>
           </button>
 
@@ -130,7 +130,7 @@ const PermissionRequest = ({ error, permissions, onRetry, className = "" }) => {
               }}
               className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-white/10 text-gray-200 border border-white/20 rounded-2xl hover:bg-white/20 hover:border-white/30 backdrop-blur-sm shadow-lg"
             >
-              <Settings size={18} />
+              <SettingsIcon size={18} />
               <span>Browser Settings</span>
             </button>
           )}

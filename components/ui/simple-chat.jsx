@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, MessageCircle, X, Users } from "lucide-react";
-import { ChatIcon } from "./Icons";
+import { ChatIcon, MessageIcon, SendIcon, UsersIcon, XIcon } from "./Icons";
 
 const SimpleChat = ({
   messages = [],
@@ -93,13 +92,13 @@ const SimpleChat = ({
           <div className="flex items-center justify-between p-3 bg-white/5 backdrop-blur-sm border-b border-white/10 rounded-t-2xl">
             <div className="flex items-center space-x-2">
               <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-sm">
-                <MessageCircle size={16} className="text-purple-400" />
+                <MessageIcon size={16} className="text-purple-400" />
               </div>
               <div>
                 <h3 className="font-medium text-white text-sm">Chat</h3>
                 {isConnected && (
                   <div className="flex items-center space-x-1 text-gray-200 text-xs">
-                    <Users size={10} />
+                    <UsersIcon size={10} />
                     <span>{connectedPeers.length} online</span>
                   </div>
                 )}
@@ -109,7 +108,7 @@ const SimpleChat = ({
               onClick={toggleChat}
               className="p-1 hover:bg-white/10 rounded-lg transition-colors text-gray-200 hover:text-white"
             >
-              <X size={16} />
+              <XIcon size={16} />
             </button>
           </div>
 
@@ -124,7 +123,7 @@ const SimpleChat = ({
           <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-black/20 backdrop-blur-sm scrollbar-thin">
             {messages.length === 0 ? (
               <div className="text-center text-gray-300 text-sm mt-8">
-                <MessageCircle
+                <MessageIcon
                   size={24}
                   className="mx-auto mb-2 opacity-50 text-purple-300"
                 />
@@ -192,7 +191,7 @@ const SimpleChat = ({
                 disabled={!messageInput.trim() || !isConnected}
                 className="px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg"
               >
-                <Send size={14} />
+                <SendIcon size={14} />
               </button>
             </div>
             {messageInput.length > 250 && (

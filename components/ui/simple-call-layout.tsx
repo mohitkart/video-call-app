@@ -45,7 +45,7 @@ const SimpleCallLayout = ({
       try {
         await navigator.share({
           title: "Join my video call",
-          text: "Join me for a video call on StreamTalk",
+          text: "Join me for a video call on this link:",
           url: window.location.href,
         });
       } catch (err) {

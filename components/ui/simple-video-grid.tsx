@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/static-components */
-import { Mic, MicOff, UserSquare2 } from "lucide-react";
 import { memo } from "react";
 import CustomVideoPlayer from "../CustomVideoPlayer";
-import { UserIcon } from "./Icons";
+import { MicIcon, UserIcon } from "./Icons";
 
 const SimpleVideoGrid = ({
   players,
@@ -173,9 +172,9 @@ const SimpleVideoGrid = ({
                       ? !isAudioEnabled
                       : !(player.audioEnabled ?? !player.muted)
                   ) ? (
-                    <MicOff size={isHighlighted ? 16 : 12} />
+                    <MicIcon size={isHighlighted ? 16 : 12} />
                   ) : (
-                    <Mic size={isHighlighted ? 16 : 12} />
+                    <MicIcon size={isHighlighted ? 16 : 12} />
                   )}
                 </div>
 
@@ -269,7 +268,7 @@ const SimpleVideoGrid = ({
       {playerEntries.length === 0 && (
         <div className="w-full h-full flex items-center justify-center">
           <div className="text-center">
-            <UserSquare2 size={60} className="text-purple-300 mx-auto mb-3" />
+            <UserIcon size={60} className="text-purple-300 mx-auto mb-3" />
             <h3 className="text-lg font-medium text-white mb-2">
               Waiting for participants
             </h3>
